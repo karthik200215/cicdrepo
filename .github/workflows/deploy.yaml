@@ -1,36 +1,35 @@
 name: Deploying multiple Lambdas
- 
 on:
   push:
     branches:
-      - main  # Trigger the workflow when pushing to the `main` branch
- 
+      - main
 jobs:
-  deploy-lambdas:
-    runs-on: ubuntu-latest  # Run on the latest Ubuntu
- 
-    strategy:
-      matrix:
-        lambda: [lambda1, lambda2]  # List of Lambda directories you want to deploy
- 
+  lambda1:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3  # Checkout the code from your repository
- 
-      - name: Set up Node.js environment
-        uses: actions/setup-node@v3  # Set up the Node.js environment
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Specify Node.js version
- 
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v3  # Set up AWS credentials
+          node-version: 16
+      - uses: aws-actions/configure-aws-credentials@v3
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID  }}  # Use GitHub secrets for AWS credentials
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: us-east-1  # Specify the AWS region (adjust if needed)
+          aws-region: us-east-2
+      - run: zip -j lambda1.zip ./lambda1/index.js
+      - run: aws lambda update-function-code --function-name=lambda1 --zip-file=fileb://lambda1.zip
  
-      - name: Zip the Lambda function
-        run: zip -r ${{ matrix.lambda }}.zip ./${{ matrix.lambda }}/index.js  # Zip the Lambda code
- 
-      - name: Deploy the Lambda function
-        run: aws lambda update-function-code --function-name=${{ matrix.lambda }} --zip-file fileb://${{ matrix.lambda }}.zip
+  lambda2:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - uses: aws-actions/configure-aws-credentials@v3
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - run: zip -j lambda2.zip ./lambda2/index.js
+      - run: aws lambda update-function-code --function-name=lambda1  --zip-file=fileb://lambda1.zip
